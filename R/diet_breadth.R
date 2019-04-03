@@ -22,21 +22,21 @@
 #' @references MacArthur and Pianka 1966 -- On Optimal Use of a Patchy Environment. American Naturalist. 100:603-609.
 
 #' @title Diet breadth optimal set
-#' @export
 #' @param v Vector of resource values
 #' @param h Vector of resource handling times
 #' @param lambda Vector of encounter rates
 #' @param c_s_dot Loss of value per unit time while searching (default 0)
 #' @return A boolean vector indicating whether each resource is in the optimal set
+#' @export
 dietBreadthOptimalSet <- function(v,h,lambda,c_s_dot=0) {
   N <- length(v) # number of input resources potentially in optimal set
 
   # Sort by rank (on encounter return rate)
-  rank_i <- v / h
-  ord <- order(rank_i,decreasing=T)
-  rank_i <- rank_i[ord]
-  v <- u_i[ord]
-  h <- t_i[ord]
+  rank <- v / h
+  ord <- order(rank,decreasing=T)
+  rank <- rank[ord]
+  v <- v[ord]
+  h <- h[ord]
   lambda <- lambda[ord]
 
   bestRate <- 0
@@ -67,15 +67,15 @@ dietBreadthOptimalSet <- function(v,h,lambda,c_s_dot=0) {
 #' @export
 dietBreadthReturnRate <- function(v,h,lambda,c_s_dot=0,include=NA) {
   N <- length(v)
-  if(all(is.na(NA))) {
+  if(all(is.na(include))) {
     include <- rep(T,N)
   }
     
-  v <- u_i[include]
-  h <- t_i[include]
+  v <- v[include]
+  h <- h[include]
   lambda <- lambda[include]
-  u_dot = (-c_s_dot + sum(lambda * v)) / (1 + sum(lambda * h))
-  return(u_dot)
+  v_dot = (-c_s_dot + sum(lambda * v)) / (1 + sum(lambda * h))
+  return(v_dot)
 }
 
 #' @title Diet breadth optimal return rate
