@@ -45,7 +45,7 @@ dietBreadthOptimalSet <- function(u,h,lambda,c_s=0) {
   for(n in 1:N) {
     testSet[n] <- T
 
-    testRate <- dietBreadthReturnRate(v,h,lambda,c_s,testSet)
+    testRate <- dietBreadthReturnRate(u,h,lambda,c_s,testSet)
     if(testRate >= bestRate) {
         bestRate <- testRate
         bestSet <- testSet

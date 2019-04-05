@@ -49,6 +49,7 @@ lambda <- c(10,2,1) / 60 # 1/ min
 The first resource provides 100 kilocalories (kcal), takes 10 minutes to handle, and is encountered 10 times per hour. The second resource provides 2000 kcal, takes 500 minutes to handle, and is encountered 2 times per hour. The third resource provides 1000 kcal, takes 50 minutes to handle, and is encountered 1 time per hour. The optimal set of resources to procure is found by calling `dietBreadthOptimalSet`:
 
 ```{r}
+library(forageR)
 optimalSet <- dietBreadthOptimalSet(u,h,lambda)
 print(optimalSet)
 ```
@@ -91,7 +92,6 @@ Indeed, the overall return rate is highest when the two highest rank resources a
 The preceding section provided a basic example of how to use the forageR diet breadth code. However, it has two shortcomings. First, archaeologists sometimes use a different set of variables. In particular, what may be available is (an estimate of) the abundance of a resource on the landscape rather than the encounter rate with that resource. Second, it is sometimes crucial to model the cost (energy loss) of both search and procurement while foraging; foragerR supports this. We therefore provide a more involved example, using data from Winterhalder et al. (1988), "The Population Ecology of Hunter-Gatherers and Their Prey" (Journal of Anthropological Archaeology, Volume 7, Pages 289-328). The forageR data set wintPrey contains data from that publication (primarily, though not exclusively, drawn from Table 6). Load and print this data:
 
 ```{r}
-library(forageR)
 data(wintPrey)
 print(wintPrey)
 ```
@@ -120,7 +120,7 @@ forageR also provides a wrapper function to add the procurement cost for a resou
 
 $$u_i = u_{0,i} - h_i * c_i$$
 
-where $v_{0,i}$ is the base utility of the resource and $c_i$ is the procurement cost (rate). Extract the base utility in the variable u0 and the handling time from wintPrey (used below) and call the wrapper function to account for procurement cost:
+where $u_{0,i}$ is the base utility of the resource and $c_i$ is the procurement cost (rate). Extract the base utility in the variable u0 and the handling time from wintPrey (used below) and call the wrapper function to account for procurement cost:
 
 ```{r}
 u0 <- wintPrey$energy # kcal
