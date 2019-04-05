@@ -4,16 +4,16 @@
 \alias{dietBreadthOptimalSet}
 \title{Diet breadth model}
 \usage{
-dietBreadthOptimalSet(v, h, lambda, c_s_dot = 0)
+dietBreadthOptimalSet(u, h, lambda, c_s = 0)
 }
 \arguments{
-\item{v}{Vector of resource values}
+\item{u}{Vector of resource utilities}
 
 \item{h}{Vector of resource handling times}
 
 \item{lambda}{Vector of encounter rates}
 
-\item{c_s_dot}{Loss of value per unit time while searching (default 0)}
+\item{c_s}{Loss of utility per unit time while searching (default 0)}
 }
 \value{
 A boolean vector indicating whether each resource is in the optimal set
@@ -26,15 +26,15 @@ A boolean vector indicating whether each resource is in the optimal set
 }
 }
 \details{
-A forager searches the landscape for resources to procure. Each resource is encountered randomly as a Poisson process with encounter rate lambda_i. On encountering a resource, the forager chooses whether or not to procure it. If not, the forager continues searching. If so, the forager pursues and processes it with handling time h_i, receiving a value from the resource of v_i. Usually the value is the food energy provided by the item. Optionally, search is costly to the forager at the rate c_s_dot. That is, c_s_dot is the rate of loss of value (usually energy / time).
+A forager searches the landscape for resources to procure. Each resource is encountered randomly as a Poisson process with encounter rate lambda_i. On encountering a resource, the forager chooses whether or not to procure it. If not, the forager continues searching. If so, the forager pursues and processes it with handling time h_i, receiving a benefit from the resource of u_i. Usually the utility is the food energy provided by the item. Optionally, search is costly to the forager at the rate c_s. That is, c_s is the rate of loss of utility (usually energy / time).
 
 The overall return rate of foraging is (using R syntax):
 
-returnRate = (-c_s_dot + sum(lambda * v)) / (1 + sum(lambda * h))
+returnRate = (-c_s + sum(lambda * u)) / (1 + sum(lambda * h))
 
 The optimal diet is the set of items that maximizes this returnRate. Define
 
-rank_i = v_i / h_i
+rank_i = u_i / h_i
 
 as the rank (or on encounter return rate) of resource i. To determine the optimal set, order resources by rank from best to worst. Add resources to the diet in this rank order until the return rate no longer increases from adding additional items. This occurs when the on encounter return rate of a new item in the diet is lower than the overall return rate from procuring all the items that are more highly ranked.
 }

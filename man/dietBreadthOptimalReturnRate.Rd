@@ -4,19 +4,16 @@
 \alias{dietBreadthOptimalReturnRate}
 \title{Diet breadth optimal return rate}
 \usage{
-dietBreadthOptimalReturnRate(v, h, lambda, c_s_dot = 0)
+dietBreadthOptimalReturnRate(u, h, lambda, c_s = 0)
 }
 \arguments{
-\item{v}{Vector of resource values}
+\item{u}{Vector of resource utilities}
 
 \item{h}{Vector of resource handling times}
 
 \item{lambda}{Vector of encounter rates}
 
-\item{c_s_dot}{Loss of value per unit time while searching (default 0)}
-}
-\value{
-A boolean vector indicating whether each resource is in the optimal set
+\item{c_s}{Loss of utility per unit time while searching (default 0)}
 }
 \description{
 Diet breadth optimal return rate

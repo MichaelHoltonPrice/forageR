@@ -25,23 +25,70 @@ install_github('MichaelHoltonPrice/forageR')
 ```
 
 ## Model
-A forager searches a landscape for resources indexed by $i$. Researches are searched for simultaneously and aach resource is encountered according to a Poisson process with encounter rate $\lambda_i$. When a resource is encountered, the forager chooses to procure it or ignore it and continue searching for other resources. If the forager procures it, the forager spends $h_i$ time procuring the resource (the handling time) and gains $v_i$ from procuring it (the value; usually energy in kilocalories).
+A forager searches a landscape for resources indexed by $i$. Researches are searched for simultaneously and aach resource is encountered according to a Poisson process with encounter rate $\lambda_i$. When a resource is encountered, the forager chooses to procure it or ignore it and continue searching for other resources. If the forager procures it, the forager spends $h_i$ time procuring the resource (the handling time) and gains $u_i$ from procuring it (the utility; usually energy in kilocalories).
 
 Each resource has an on encounter return rate, or rank, given by
 
-$$q_i = \frac{v_i}{h_i}$$
+$$q_i = \frac{u_i}{h_i}$$
 
-Let $b_i$ be a boolean indicator variable that is $1$ is a resource is procured on encounter and $0$ otherwise.
-The overall return rate from foraging is
+Let $b_i$ be a boolean indicator variable that is $1$ is a resource is procured on encounter and $0$ otherwise. The overall return rate from foraging is
 
-$$\dot{V} = \frac{\dot{c}_s + \sum_{i} \lambda_i \, v_i}{1 + \sum_{i} \lambda_i \, h_i} $$
+$$\frac{dV}{dt} = \frac{c_s + \sum_{i} \lambda_i \, u_i}{1 + \sum_{i} \lambda_i \, h_i} $$
 
-where a dot above a variable indicates a time derivative and $\dot{c}_s$ is the rate at which value is lost during search (usually energy per time). There is a generally unique set of resources that one a forager should procure on encounter to maximize this overall return rate. This optimal set is found by sorting resources from best to worst according to the on encounter return rate $q_i$, then adding items to the diet so long as doing so improves the overall return rate. The first item excluded from the diet (and all remaining ones) has an on encounter return rate that is lower than the overall return rate achieved by procuring all higher ranked items.
+$c_s$ is the rate at which utility is lost during search (usually energy per time). There is a generally unique set of resources that a forager should procure on encounter to maximize this overall return rate. This optimal set is found by sorting resources from best to worst according to the on encounter return rate $q_i$, then adding items to the diet so long as doing so improves the overall return rate. The first item excluded from the diet (and all remaining ones) has an on encounter return rate that is lower than the overall return rate achieved by procuring all higher ranked items.
 
-## Example
-The forageR package provides three functions related to the diet breadth model: `dietBreadthOptimalSet`, `dietBreadthReturnRate`, and `dietBreadthOptimalReturnRate`. `dietBreadthOptimalSet` determines the optimal set of resources to procure on encounter to maximize the overall return rate. `dietBreadthReturnRate` calculates the return rate for a set of resources, whether or not they are the optimal set. Optionally, items can be included in or excluded from the diet using the optional input variable `include`; if `include` is not specified, all items are used. `dietBreadthOptimalReturnRate` calculates the return rate for the optimal set. It is merely a wrapper function that calls `dietBreadthOptimalSet` to determine the optimal set then calls `dietBreadthReturnRate` with the variable `incldude` equal to the optimal set.
+## Application 1: A basic example
+The smallest set of information needed to call the diet breadth model is: a vector of resource encounter rates (lambda), a vector of resource utilities (u; usually calories of food item), and a vector of resource handling times (h). Let's define three notional resources:
 
-To demonstrate the use of these functions, load resource data from Winterhalder et al. (1988), "The Population Ecology of Hunter-Gatherers and Their Prey" (Journal of Anthropological Archaeology, Volume 7, Pages 289-328).
+
+```{r}
+u <- c(100,2000,1000) # kcal
+h <- c(10,500,50) # min
+lambda <- c(10,2,1) / 60 # 1/ min
+```
+The first resource provides 100 kilocalories (kcal), takes 10 minutes to handle, and is encountered 10 times per hour. The second resource provides 2000 kcal, takes 500 minutes to handle, and is encountered 2 times per hour. The third resource provides 1000 kcal, takes 50 minutes to handle, and is encountered 1 time per hour. The optimal set of resources to procure is found by calling `dietBreadthOptimalSet`:
+
+```{r}
+optimalSet <- dietBreadthOptimalSet(u,h,lambda)
+print(optimalSet)
+```
+
+optimalSet is boolean (or logical) vector the same length as the number of input resources. Entries are TRUE if the item is in the optimal set of items to procure and FALSE otherwise. For the notional resources defined above, the first and third resources are in the optimal set.
+
+The function `dietBreadthReturnRate` calculates the overall foraging return rate given a set of resources that are procured on encounter, which can be specified with the input boolean vector include. If include is not specified, it is assumed that all resources are procured on encounter. Thus, the return rate returned by `dietBreadthReturnRate` is is not necessarily the optimal return rate. It is, however, the optimal return rate if it is called with the optimal set determined above:
+
+```{r}
+optimalReturnRate <- dietBreadthReturnRate(u,h,lambda,include=optimalSet)
+print(optimalReturnRate)
+```
+
+Rather than first calling `dietBreadthOptimalSet` then calling `dietBreadthReturnRate` to calculate the optimal return rate, the wrapper function `dietBreadthOptimalReturnRate` can be called to do this in one step:
+
+```{r}
+optimalReturnRate2 <- dietBreadthOptimalReturnRate(u,h,lambda)
+print(optimalReturnRate2)
+```
+
+It may be instructive do some further calculations to illustrate the underlying logic of the diet breadth model. One crucial variable is a resource's on encounter return rate (called rank in some contexts, though sometimes rank is only used for the relative ordering of resources according to the on encounter return rate), which is the ratio of its utility to its handling time:
+
+```{r}
+rank <- u / h
+print(rank)
+```
+
+Resource 3 has the highest rank (20), followed by Resource 1 (10) and Resource 2 (4). When a given resource is encountered, it is only worth procuring if its on encounter return rate is greater than the overall return rate the forager can achieve with a set of resources that does not include the encountered resource. Clearly, the highest rank item should always be procured (though it is possible that foraging is a mistake to begin with). Additional items are added to the diet if doing so increases the overall return rate. Consider, therefore, the second ranked item once it has already been encountered. If that second item's on encounter return rate exceeds the overall return rate from procuring only the first item, it should be added to the diet. Additional items are added in like manner in rank order so long as including them increases the overall return rate. To emphasize this, directly calculate the return rate with one (Resource 3), two (Resource 3 and Resource 1), and all items in the diet:
+
+```{r}
+print(dietBreadthReturnRate(u,h,lambda,include=c(F,F,T)))
+print(dietBreadthReturnRate(u,h,lambda,include=c(T,F,T)))
+print(dietBreadthReturnRate(u,h,lambda,include=c(T,T,T)))
+```
+
+Indeed, the overall return rate is highest when the two highest rank resources are procured (Resource 3 and Resource 1). Further, the on encounter return rate of the lowest ranked resource (Resource 2) is lower than the overall return rate of procuring the two higher rank resources, whereas the on encounter return rate of the middle resource (Resource 1) is higher than the overall return rate of procuring only the first ranked item (Resource 3). This is all consistent with the logic and requirements of the model.
+
+
+## Application 2: A less basic example
+The preceding section provided a basic example of how to use the forageR diet breadth code. However, it has two shortcomings. First, archaeologists sometimes use a different set of variables. In particular, what may be available is (an estimate of) the abundance of a resource on the landscape rather than the encounter rate with that resource. Second, it is sometimes crucial to model the cost (energy loss) of both search and procurement while foraging; foragerR supports this. We therefore provide a more involved example, using data from Winterhalder et al. (1988), "The Population Ecology of Hunter-Gatherers and Their Prey" (Journal of Anthropological Archaeology, Volume 7, Pages 289-328). The forageR data set wintPrey contains data from that publication (primarily, though not exclusively, drawn from Table 6). Load and print this data:
 
 ```{r}
 library(forageR)
@@ -49,43 +96,60 @@ data(wintPrey)
 print(wintPrey)
 ```
 
-This data set contains eight notional resources named Aprey through Hprey. For each, the following is given: the energy value (kcal), handling time (min), procurement loss (kcal/min), density (No. / km^2), growth rate (1/year), and search radius (km). The search radius is the radius in around a forager in which the resource is visible. Winterhalder et al. (1988) assume a forager's search speed is 0.5 km / hr. The encounter rate, value accounting for procurement cost, and handling time are, respectively (ordered by rank),
+There are eight notional resources named Aprey through Hprey. For each, the following is given: the energy value (kcal), handling time (min), procurement loss (kcal/min), density (No. / km^2), growth rate (1/year), and search radius (km). The procurement loss (or procurement cost) is the rate at which the forager burns energy while procuring a resource. The search radius is the radius around a forager in which the resource is visible. While Winterhalder et al. (1988) assumes these are the same for all resources, forageR supports resource specific values. In addition to the resource traits in wintPrey, two additional traits must be specified: forager search speed and forager search cost. The forager search speed is the speed at which a forager moves through the landscape while searching for resources. The forager search cost (a rate), similar to procure_loss, is the rate at which a forager burns energy during search. Following Winterhalder et al. (1988), we assume a forager search speed of 0.5 km / hr and a forager search cost (rate) of 4 kcal / hr.
+
 
 ```{r}
-rank <- wintPrey$energy / wintPrey$handling_time
-ord <- order(rank,decreasing=T)
-wintPrey <- wintPrey[ord,]
-forageSpeed <- 0.5 # km / hr
-lambda <- wintPrey$density * 2 * wintPrey$search_radius * forageSpeed / 60 # No / min
-v <- wintPrey$energy - wintPrey$procure_loss * wintPrey$handling_time # kcal
-h <- wintPrey$handling_time # min
-```
-
-Calculate the return rate from progressively adding items to the diet in rank order, using a search cost of 4 kcal / min:
-
-```{r}
-include <- rep(F,length(lambda))
-returnRate <- rep(NA,length(lambda))
+foragerSpeed <- 0.5 / 60 # km / min
 search_cost <- 4 # kcal / min
-for(i in 1:length(lambda)) {
-  include[i] <- T
-  returnRate[i] <- dietBreadthReturnRate(v,h,lambda,search_cost,include) # kcal / min
-}
-print(cbind(wintPrey$name,returnRate*60)) # kcal / hr
 ```
 
-This reproduces the final column in Table 8 of Winterhalder et al. (1988). The optimal diet includes (in rank order) Cprey, Dprey, Aprey, and Bprey and excludes (in rank order) Fprey, Eprey, Hprey, and Gprey. This can be determined directly by calling `dietBreadthOptimalSet`.
+forageR provides a wrapper function to convert from resource density on the landscape to encounter rate. The assumed relationship between these variables is: 
+
+$$\lambda_i = \rho_i \, 2 \, r_i \, u_s$$
+
+where $\lambda_i$ is, as before, the encounter rate (units: Number / Time), $rho_i$ is the density of the resource on the landscape (Number / Area), $r_i$ is the search radius for the resource (Length), and $u_s$ is the search speed (Length / Time). The factor of $2$ arises because the forager looks left and right as he or she searches the landscape. Call the wrapper function to calculate the encounter rate for the preceding resources:
 
 ```{r}
-  optimalSet <- dietBreadthOptimalSet(v,h,lambda,search_cost)
-  print(wintPrey$name[optimalSet])
+# units of lambda (encounter rate): per minute
+lambda <- dietBreadthDensityToEncounterRate(wintPrey$density,wintPrey$search_radius,foragerSpeed)
+print(lambda)
 ```
 
-The optimal return rate can be found by calling `dietBreadthReturnRate` with this optimal set or calling `dietBreadthOptimalReturnRate`, which first determines the optimal set then calculate the return rate:
+forageR also provides a wrapper function to add the procurement cost for a resource. In wintPrey, the base utility of each resource is given by the column energy. The procurement cost is the energy lost per unit time (in minutes). The actual energy value accounting for procurement cost is
+
+$$u_i = u_{0,i} - h_i * c_i$$
+
+where $v_{0,i}$ is the base utility of the resource and $c_i$ is the procurement cost (rate). Extract the base utility in the variable u0 and the handling time from wintPrey (used below) and call the wrapper function to account for procurement cost:
 
 ```{r}
-  returnRate1 <- dietBreadthReturnRate(v,h,lambda,search_cost,optimalSet)
-  print(returnRate1*60) # kcal / hr
-  returnRate2 <- dietBreadthOptimalReturnRate(v,h,lambda,search_cost)
-  print(returnRate2*60) # kcal / hr
+u0 <- wintPrey$energy # kcal
+h <- wintPrey$handling_time # min
+u <- dietBreadthAddProcureCost(u0,h,wintPrey$procure_loss) # kcal
+print(u0)
+print(u)
+print(h)
 ```
+
+The optimal return rates using the base and modified resource utilities are (multiplying by 60 so the units are kilocalories per hour):
+
+```{r}
+print(dietBreadthOptimalReturnRate(u0,h,lambda)*60)
+print(dietBreadthOptimalReturnRate(u,h,lambda)*60)
+```
+
+As pointed out above, search is also costly. If dietBreadthOptimalReturnRate is called without specifying a search cost (as above) the search cost is assumed to be zero. To specify a search cost, used the optional input c_s:
+
+```{r}
+print(dietBreadthOptimalReturnRate(u0,h,lambda,c_s=search_cost)*60)
+print(dietBreadthOptimalReturnRate(u,h,lambda,c_s=search_cost)*60)
+```
+
+This correctly gives the optimal overall return rate, 1209.9 kcal/hr, reported in Table 8 of Winterhalder et al. (1988). Finally, forageR provides a function that gives an overall analysis of the diet:
+
+
+```{r}
+print(dietBreadthAnalysis(u,h/60,lambda*60,search_cost*60,wintPrey$name))
+```
+
+The first row reports information for a diet that only involves the highest ranked item, Cprey. The next row adds the second ranked item, Dprey, and so forth through the last row which includes all items in the diet. The first column (name_lowest_rank) gives the name of the lowest ranked item in the diet (the name is an optional input to dietBreadthAnalysis). The second column (return_rate) gives the overall return rate. The third column (q_lowest_rank) gives the on encounter return rate of the lowest rank iterm in the diet. The fourth column (optimal_set) indicates the optimal set. The analysis printed above should be compared to Table 8in Winterhalder et al. (1988).
