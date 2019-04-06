@@ -33,7 +33,7 @@ $$q_i = \frac{u_i}{h_i}$$
 
 Let $b_i$ be a boolean indicator variable that is $1$ is a resource is procured on encounter and $0$ otherwise. The overall return rate from foraging is
 
-$$\frac{dV}{dt} = \frac{c_s + \sum_{i} \lambda_i \, u_i}{1 + \sum_{i} \lambda_i \, h_i} $$
+$$\frac{dV}{dt} = \frac{-c_s + \sum_{i} \lambda_i \, u_i}{1 + \sum_{i} \lambda_i \, h_i} $$
 
 $c_s$ is the rate at which utility is lost during search (usually energy per time). There is a generally unique set of resources that a forager should procure on encounter to maximize this overall return rate. This optimal set is found by sorting resources from best to worst according to the on encounter return rate $q_i$, then adding items to the diet so long as doing so improves the overall return rate. The first item excluded from the diet (and all remaining ones) has an on encounter return rate that is lower than the overall return rate achieved by procuring all higher ranked items.
 
